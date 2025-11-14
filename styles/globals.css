@@ -3,6 +3,27 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-950 text-slate-100;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  @apply text-amber-50;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+
+  /* Darkest-Dungeon inspired gradient */
+  background:
+    radial-gradient(circle at top, #5a281c 0, #12040b 40%, #050309 100%),
+    #050309;
+}
+
+/* Optional: subtle card styling helpers if you want them later */
+.sanctum-shell {
+  @apply min-h-screen flex flex-col items-center px-4 py-6;
+}
+
+.sanctum-card {
+  @apply bg-[#14070e]/90 border border-[#422019] rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.85)];
+}
+
+.sanctum-pill {
+  @apply inline-flex items-center justify-center rounded-full border border-[#a95332]
+    bg-[#220b0b] px-4 py-1 text-[0.65rem] uppercase tracking-[0.18em]
+    text-amber-200;
 }
