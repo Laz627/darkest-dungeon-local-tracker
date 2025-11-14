@@ -1,368 +1,178 @@
-import { useEffect, useMemo, useState } from "react";
-import { DayEntry, DaysState, Habit } from "@/types";
-import { loadDays, saveDays, exportDays, importDays } from "@/lib/storage";
+import { useState, useEffect, useMemo } from "react";
+import { format, addDays, subDays } from "date-fns";
 import {
-  todayISO,
-  shiftDate,
-  getMonthKeyFromDate,
-  getWeekStart,
-} from "@/lib/date";
-import { computeMood, moodLabel } from "@/lib/mood";
-import { generateBossFight } from "@/lib/boss";
-import HabitGrid from "@/components/HabitGrid";
-import DailyTitle from "@/components/DailyTitle";
+  loadDay,
+  saveDay,
+  createEmptyDay,
+  exportData,
+  importData,
+} from "@/lib/storage";
+import { getDailyTitle, getNarratorLine } from "@/lib/flavor";
+import { encounters } from "@/lib/encounters";
 import MiniCalendar from "@/components/MiniCalendar";
 import BossFightCard from "@/components/BossFightCard";
 
-const HABITS: Habit[] = [
-  {
-    id: "exercise",
-    label: "Steel the Flesh",
-    description: "Move the body. Run, lift, or walk until the blood stirs.",
-  },
-  {
-    id: "two_meals",
-    label: "Rations Secured",
-    description: "Eat two honest meals instead of scavenged scraps.",
-  },
-  {
-    id: "read",
-    label: "Study the Tomes",
-    description: "Read a few pages and sharpen the mind against the dark.",
-  },
-  {
-    id: "pro_dev",
-    label: "Hone the Trade",
-    description: "Learn something that makes tomorrow’s work hit harder.",
-  },
-  {
-    id: "relax",
-    label: "Lower the Torch",
-    description: "Deliberate unwinding before sleep. No frantic scrolling.",
-  },
-  {
-    id: "quality_time",
-    label: "Guard the Hearth",
-    description: "Present, unrushed time with Melissa and the cats.",
-  },
-  {
-    id: "sleep_cpap",
-    label: "Ward the Night",
-    description: "Mask on, airway clear, sleep taken seriously.",
-  },
-  {
-    id: "personal_project",
-    label: "Advance the Side Quest",
-    description: "Push one personal project a single square forward.",
-  },
-  {
-    id: "work_project",
-    label: "Steady the Banner",
-    description: "Nudge one professional initiative toward completion.",
-  },
-  {
-    id: "mental_health",
-    label: "Mute the Sirens",
-    description: "Keep social feeds on a short leash. No doom-scrolling.",
-  },
-  {
-    id: "physical_health",
-    label: "Temper the Brew",
-    description: "Keep caffeine modest so the nervous system can breathe.",
-  },
-];
+export default function Home() {
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [data, setData] = useState<any>(createEmptyDay());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showBoss, setShowBoss] = useState(false);
 
-
-function computeStreak(days: DaysState, startDate: string): number {
-  let streak = 0;
-  let cursor = startDate;
-
-  while (true) {
-    const entry = days[cursor];
-    if (!entry || entry.completedHabitIds.length === 0) break;
-
-    streak++;
-    cursor = shiftDate(cursor, -1);
-  }
-
-  return streak;
-}
-
-function computeWeeklyScore(days: DaysState, endDate: string): number {
-  // Sum of completed habits in last 7 days
-  let score = 0;
-  for (let i = 0; i < 7; i++) {
-    const d = shiftDate(endDate, -i);
-    const entry = days[d];
-    score += entry?.completedHabitIds.length ?? 0;
-  }
-  return score;
-}
-
-export default function HomePage() {
-  const [days, setDays] = useState<DaysState>({});
-  const [currentDate, setCurrentDate] = useState<string>(todayISO());
-  const [ready, setReady] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-
-  const today = todayISO();
-  const isToday = currentDate === today;
-
+  // Load daily data when date changes
   useEffect(() => {
-    setDays(loadDays());
-    setReady(true);
-  }, []);
+    const loaded = loadDay(format(currentDate, "yyyy-MM-dd"));
+    setData(loaded ?? createEmptyDay());
+  }, [currentDate]);
 
-  useEffect(() => {
-    if (ready) saveDays(days);
-  }, [days, ready]);
+  // Derived state
+  const completedCount = useMemo(
+    () => Object.values(data.tasks).filter(Boolean).length,
+    [data]
+  );
 
-  const entry: DayEntry =
-    days[currentDate] || { date: currentDate, completedHabitIds: [] };
+  const dayKey = format(currentDate, "yyyy-MM-dd");
 
-  const mood = computeMood(entry);
-
-  const streak = useMemo(() => computeStreak(days, today), [days, today]);
-
-  const last7 = useMemo(() => {
-    const arr: { date: string; count: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = shiftDate(today, -i);
-      const e = days[d];
-      arr.push({ date: d, count: e?.completedHabitIds.length ?? 0 });
-    }
-    return arr;
-  }, [days, today]);
-
-  const weeklyScore = computeWeeklyScore(days, today);
-  const weekStart = getWeekStart(today);
-  const boss = generateBossFight(weekStart, weeklyScore);
-
-  const monthKey = getMonthKeyFromDate(currentDate);
-
-  const toggleHabit = (id: string) => {
-    setDays((prev) => {
-      const existing = prev[currentDate] || {
-        date: currentDate,
-        completedHabitIds: [],
-      };
-
-      const done = existing.completedHabitIds.includes(id);
-      const updated: DayEntry = {
-        ...existing,
-        completedHabitIds: done
-          ? existing.completedHabitIds.filter((x) => x !== id)
-          : [...existing.completedHabitIds, id],
-      };
-
-      return { ...prev, [currentDate]: updated };
-    });
-  };
-
-  const updateNote = (text: string) => {
-    setDays((prev) => ({
-      ...prev,
-      [currentDate]: {
-        ...(prev[currentDate] || { date: currentDate, completedHabitIds: [] }),
-        note: text,
+  function toggleTask(key: string) {
+    const updated = {
+      ...data,
+      tasks: {
+        ...data.tasks,
+        [key]: !data.tasks[key],
       },
-    }));
-  };
+    };
+    setData(updated);
+    saveDay(dayKey, updated);
+  }
 
-  const handleImport = (file: File) => {
-    importDays(file, (data) => setDays(data));
-  };
+  function updateNote(text: string) {
+    const updated = { ...data, note: text };
+    setData(updated);
+    saveDay(dayKey, updated);
+  }
 
-  if (!ready) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
-        Summoning the Dark Sanctum…
-      </div>
-    );
+  function goPrev() {
+    setCurrentDate((d) => subDays(d, 1));
+  }
+
+  function goNext() {
+    setCurrentDate((d) => addDays(d, 1));
   }
 
   return (
-    <div className="sanctum-shell text-amber-50">
-      {/* Header */}
-      <h1 className="text-xl font-semibold tracking-[0.18em] uppercase text-amber-200">
-        The Dark Sanctum
-      </h1>
-      <div className="text-[0.7rem] text-amber-300/80 mt-1 uppercase tracking-[0.16em]">
-        Daily rituals of the adept
-      </div>
-          <h1 className="text-xl font-semibold">Dark Sanctum – Daily Tracker</h1>
-          <div className="text-xs text-slate-400 mt-1">
-            Track the dungeon of your day, not just your output.
-          </div>
-        </div>
+    <main className="min-h-screen bg-[#0c0a09] text-gray-200 px-6 py-8">
+      <div className="max-w-5xl mx-auto space-y-10">
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-wide text-amber-500">
+            Dark Sanctum — Daily Tracker
+          </h1>
 
-        <div className="flex gap-3 items-center">
-          <div className="text-right">
-            <div className="text-[0.65rem] uppercase text-slate-500">Streak</div>
-            <div className="text-lg font-semibold">
-              {streak} day{streak === 1 ? "" : "s"}
-            </div>
+          <div className="space-x-4">
+            <button
+              className="px-4 py-1 rounded bg-amber-700/20 border border-amber-600/40 hover:bg-amber-700/40 transition"
+              onClick={() => exportData()}
+            >
+              Export
+            </button>
+            <button
+              className="px-4 py-1 rounded bg-amber-700/20 border border-amber-600/40 hover:bg-amber-700/40 transition"
+              onClick={() => importData(setCurrentDate, setData)}
+            >
+              Import
+            </button>
+            <button
+              className="px-4 py-1 rounded bg-amber-700/20 border border-amber-600/40 hover:bg-amber-700/40 transition"
+              onClick={() => setShowCalendar(true)}
+            >
+              Calendar
+            </button>
           </div>
+        </header>
 
+        {/* Date + Navigation */}
+        <section className="flex items-center justify-between text-lg">
           <button
-            className="text-xs px-3 py-1 border border-slate-700 rounded hover:bg-slate-800"
-            onClick={() => exportDays(days)}
+            onClick={goPrev}
+            className="px-3 py-1 rounded bg-gray-800/50 border border-gray-700 hover:bg-gray-700/40"
           >
-            Export
+            ← Previous
           </button>
 
-          <label className="text-xs px-3 py-1 border border-slate-700 rounded hover:bg-slate-800 cursor-pointer">
-            Import
-            <input
-              type="file"
-              className="hidden"
-              accept=".json"
-              onChange={(e) => {
-                if (e.target.files?.[0]) handleImport(e.target.files[0]);
-              }}
-            />
-          </label>
-
-          <button
-            className="text-xs px-3 py-1 border border-slate-700 rounded hover:bg-slate-800"
-            onClick={() => setCalendarOpen(true)}
-          >
-            Calendar
-          </button>
-        </div>
-      </header>
-
-      {/* Date navigation */}
-      <div className="w-full max-w-4xl mb-4 flex items-center justify-between">
-        <button
-          className="px-3 py-1 text-xs border border-slate-700 rounded hover:bg-slate-800"
-          onClick={() => setCurrentDate((d) => shiftDate(d, -1))}
-        >
-          ← Previous
-        </button>
-
-        <div className="text-xs text-slate-300">
-          {currentDate}{" "}
-          {isToday && <span className="text-amber-400 ml-1">(Today)</span>}
-        </div>
-
-        <button
-          disabled={currentDate >= today}
-          className="px-3 py-1 text-xs border border-slate-700 rounded hover:bg-slate-800 disabled:opacity-40"
-          onClick={() => setCurrentDate((d) => shiftDate(d, 1))}
-        >
-          Next →
-        </button>
-      </div>
-
-      {/* Main card */}
-      <main className="w-full max-w-4xl bg-slate-900/70 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col gap-6">
-        {/* Title + mood */}
-        <section className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-slate-100">
-                {moodLabel(mood)}
-              </div>
-              <div className="text-[0.7rem] text-slate-400">
-                {entry.completedHabitIds.length} encounter(s) completed
-              </div>
-            </div>
-          </div>
-
-          <DailyTitle
-            date={currentDate}
-            mood={mood}
-            completedCount={entry.completedHabitIds.length}
-          />
-        </section>
-
-        {/* Habits */}
-        <section>
-          <h3 className="text-sm font-semibold mb-2">Encounters</h3>
-          <HabitGrid habits={HABITS} entry={entry} onToggle={toggleHabit} />
-        </section>
-
-        {/* Notes */}
-        <section>
-          <h3 className="text-sm font-semibold mb-1">Chronicle</h3>
-          <textarea
-            value={entry.note ?? ""}
-            onChange={(e) => updateNote(e.target.value)}
-            placeholder="How did today actually feel?"
-            className="w-full bg-slate-950/60 border border-slate-700 rounded-md text-xs px-2 py-2 min-h-[70px]"
-          />
-        </section>
-
-        {/* Torchline & Boss */}
-        <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
-          {/* Torchline */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2">
-              Torchline (Last 7 Days)
-            </h3>
-            <div className="flex items-end gap-2">
-              {last7.map(({ date, count }) => {
-                const height = Math.min(2 + count * 0.8, 7);
-                const bg =
-                  count === 0
-                    ? "bg-slate-700"
-                    : count <= 3
-                    ? "bg-emerald-600"
-                    : "bg-emerald-300";
-
-                return (
-                  <div key={date} className="flex flex-col items-center">
-                    <div
-                      className={`w-5 rounded ${bg}`}
-                      style={{ height: `${height}rem` }}
-                    />
-                    <span className="text-[0.6rem] text-slate-500">
-                      {date.slice(5)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-[0.65rem] text-slate-500 mt-1">
-              Any completed encounter keeps the flame alive. Imperfect days still
-              move the story forward.
+          <div className="text-center">
+            <p className="font-medium text-gray-300">
+              {format(currentDate, "yyyy-MM-dd")}
+            </p>
+            <p className="text-amber-500 text-sm mt-1">
+              {dayKey === format(new Date(), "yyyy-MM-dd") && "(Today)"}
             </p>
           </div>
 
-          {/* Boss card */}
-          <div>
-            <h3 className="text-sm font-semibold mb-2">This Week&apos;s Boss</h3>
-            <BossFightCard boss={boss} />
+          <button
+            onClick={goNext}
+            className="px-3 py-1 rounded bg-gray-800/50 border border-gray-700 hover:bg-gray-700/40"
+          >
+            Next →
+          </button>
+        </section>
+
+        {/* Daily Title & Narration */}
+        <section className="p-6 bg-[#1a1412] rounded-xl border border-amber-800/40 shadow-lg space-y-3">
+          <h2 className="text-2xl text-amber-400 tracking-wide">
+            {getDailyTitle(completedCount)}
+          </h2>
+          <p className="italic text-gray-400">{getNarratorLine(completedCount)}</p>
+
+          <div className="flex justify-end pt-4">
+            <button
+              onClick={() => setShowBoss(true)}
+              className="px-4 py-1 rounded bg-red-900/40 border border-red-700 hover:bg-red-700/40 text-red-300 transition"
+            >
+              Face Today’s Boss
+            </button>
           </div>
         </section>
-      </main>
 
-      {/* Calendar modal */}
-      {calendarOpen && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-sm font-semibold">Chronicle Calendar</h2>
+        {/* Encounter Tasks */}
+        <section className="p-6 bg-[#14100f] rounded-xl border border-gray-800 shadow space-y-4">
+          <h3 className="text-xl text-amber-400 tracking-wide">Encounters</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {encounters.map((task) => (
               <button
-                className="text-xs px-2 py-1 border border-slate-700 rounded hover:bg-slate-800"
-                onClick={() => setCalendarOpen(false)}
+                key={task.key}
+                onClick={() => toggleTask(task.key)}
+                className={`p-4 rounded-xl border text-left transition ${
+                  data.tasks[task.key]
+                    ? "border-amber-500 bg-amber-500/10 shadow-md"
+                    : "border-gray-700 bg-black/20 hover:bg-gray-800/40"
+                }`}
               >
-                Close
+                <p className="font-semibold text-gray-200">{task.title}</p>
+                <p className="text-sm text-gray-400 mt-1">{task.flavor}</p>
               </button>
-            </div>
-
-            <MiniCalendar
-              monthKey={monthKey}
-              days={days}
-              onSelect={(d) => {
-                setCurrentDate(d);
-                setCalendarOpen(false);
-              }}
-            />
+            ))}
           </div>
-        </div>
+        </section>
+
+        {/* Notes */}
+        <section className="p-6 bg-[#14100f] rounded-xl border border-gray-800 shadow space-y-2">
+          <h3 className="text-xl text-amber-400 tracking-wide">Chronicle</h3>
+          <textarea
+            className="w-full h-28 bg-black/30 rounded p-3 border border-gray-700 text-gray-200"
+            value={data.note}
+            onChange={(e) => updateNote(e.target.value)}
+            placeholder="How did today actually feel?"
+          />
+        </section>
+      </div>
+
+      {showCalendar && <MiniCalendar close={() => setShowCalendar(false)} />}
+      {showBoss && (
+        <BossFightCard
+          encounters={completedCount}
+          close={() => setShowBoss(false)}
+        />
       )}
-    </div>
+    </main>
   );
 }
