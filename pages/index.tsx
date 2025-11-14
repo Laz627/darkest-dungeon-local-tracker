@@ -15,58 +15,63 @@ import MiniCalendar from "@/components/MiniCalendar";
 import BossFightCard from "@/components/BossFightCard";
 
 const HABITS: Habit[] = [
-  { id: "exercise", label: "Exercise", description: "Movement of any kind." },
+  {
+    id: "exercise",
+    label: "Steel the Flesh",
+    description: "Move the body. Run, lift, or walk until the blood stirs.",
+  },
   {
     id: "two_meals",
-    label: "Eat Two Good Meals",
-    description: "Nourish the body well.",
+    label: "Rations Secured",
+    description: "Eat two honest meals instead of scavenged scraps.",
   },
   {
     id: "read",
-    label: "Read Book",
-    description: "A few pages is enough.",
+    label: "Study the Tomes",
+    description: "Read a few pages and sharpen the mind against the dark.",
   },
   {
     id: "pro_dev",
-    label: "Professional Development",
-    description: "Learn something useful.",
+    label: "Hone the Trade",
+    description: "Learn something that makes tomorrow’s work hit harder.",
   },
   {
     id: "relax",
-    label: "Relax at Night",
-    description: "Deliberate unwinding.",
+    label: "Lower the Torch",
+    description: "Deliberate unwinding before sleep. No frantic scrolling.",
   },
   {
     id: "quality_time",
-    label: "Quality Time",
-    description: "Connection with Melissa & cats.",
+    label: "Guard the Hearth",
+    description: "Present, unrushed time with Melissa and the cats.",
   },
   {
     id: "sleep_cpap",
-    label: "Quality Sleep / CPAP",
-    description: "Proper sleep hygiene.",
+    label: "Ward the Night",
+    description: "Mask on, airway clear, sleep taken seriously.",
   },
   {
     id: "personal_project",
-    label: "Personal Project",
-    description: "Work toward one goal.",
+    label: "Advance the Side Quest",
+    description: "Push one personal project a single square forward.",
   },
   {
     id: "work_project",
-    label: "Professional Project",
-    description: "Forward progress at work.",
+    label: "Steady the Banner",
+    description: "Nudge one professional initiative toward completion.",
   },
   {
     id: "mental_health",
-    label: "Mental Health Check",
-    description: "Minimal social media.",
+    label: "Mute the Sirens",
+    description: "Keep social feeds on a short leash. No doom-scrolling.",
   },
   {
     id: "physical_health",
-    label: "Physical Health Check",
-    description: "Minimal caffeine.",
+    label: "Temper the Brew",
+    description: "Keep caffeine modest so the nervous system can breathe.",
   },
 ];
+
 
 function computeStreak(days: DaysState, startDate: string): number {
   let streak = 0;
