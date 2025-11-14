@@ -182,10 +182,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 px-4 py-6 flex flex-col items-center">
+    <div className="sanctum-shell text-amber-50">
       {/* Header */}
-      <header className="w-full max-w-4xl mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <h1 className="text-xl font-semibold tracking-[0.18em] uppercase text-amber-200">
+        The Dark Sanctum
+      </h1>
+      <div className="text-[0.7rem] text-amber-300/80 mt-1 uppercase tracking-[0.16em]">
+        Daily rituals of the adept
+      </div>
           <h1 className="text-xl font-semibold">Dark Sanctum – Daily Tracker</h1>
           <div className="text-xs text-slate-400 mt-1">
             Track the dungeon of your day, not just your output.
