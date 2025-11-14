@@ -1,17 +1,21 @@
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
-export function shiftDate(date: string, offset: number): string {
-  const d = new Date(date);
-  d.setDate(d.getDate() + offset);
+
+export function shiftDate(dateStr: string, deltaDays: number): string {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + deltaDays);
   return d.toISOString().slice(0, 10);
 }
-export function getMonthKeyFromDate(date: string): string {
-  return date.slice(0, 7); // YYYY-MM
+
+export function getMonthKeyFromDate(dateStr: string): string {
+  return dateStr.slice(0, 7); // YYYY-MM
 }
-export function getWeekStart(date: string): string {
-  const d = new Date(date);
+
+export function getWeekStart(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
   const day = d.getDay();
-  d.setDate(d.getDate() - day);
+  const diffToMonday = (day + 6) % 7;
+  d.setDate(d.getDate() - diffToMonday);
   return d.toISOString().slice(0, 10);
 }

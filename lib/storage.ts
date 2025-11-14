@@ -1,33 +1,42 @@
 import { DaysState } from "@/types";
+
+const KEY = "darkSanctumV1";
+
 export function loadDays(): DaysState {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem("days");
-    return raw ? (JSON.parse(raw) as DaysState) : {};
+    const raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
-export function saveDays(days: DaysState): void {
+
+export function saveDays(days: DaysState) {
   if (typeof window === "undefined") return;
-  localStorage.setItem("days", JSON.stringify(days));
+  localStorage.setItem(KEY, JSON.stringify(days));
 }
-export function exportDays(days: DaysState): void {
-  const blob = new Blob([JSON.stringify(days, null, 2)], { type: "application/json" });
+
+export function exportDays(days: DaysState) {
+  const blob = new Blob([JSON.stringify(days, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = "dark_sanctum_export.json";
   a.click();
+  URL.revokeObjectURL(url);
 }
-export function importDays(file: File, cb: (d: DaysState) => void): void {
+
+export function importDays(file: File, callback: (data: DaysState) => void) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
       const parsed = JSON.parse(reader.result as string);
-      cb(parsed);
+      callback(parsed);
     } catch {
-      alert("Invalid file.");
+      alert("Invalid JSON file.");
     }
   };
   reader.readAsText(file);

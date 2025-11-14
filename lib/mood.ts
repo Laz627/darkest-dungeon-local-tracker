@@ -1,22 +1,25 @@
-const FLAVORS = {
-  calm: ["The air feels still today.", "A quiet dusk settles."],
-  stressed: ["A weight rides on your shoulders.", "Shadows cling a bit too long."],
-  neutral: ["Another day, another small step forward."],
-};
-export function computeMood(entry) {
-  const c = entry.completedHabitIds.length;
-  if (c >= 8) return "calm";
-  if (c <= 2) return "stressed";
-  return "neutral";
+import { DayEntry, Mood } from "@/types";
+
+export function computeMood(entry: DayEntry): Mood {
+  const n = entry.completedHabitIds.length;
+
+  if (n === 0) return "fractured";
+  if (n === 1) return "wavering";
+  if (n === 2) return "quiet";
+  if (n === 3) return "resilient";
+  if (n === 4) return "stalwart";
+
+  return "overclocked";
 }
-export function moodLabel(mood: string): string {
-  return mood === "calm"
-    ? "Calm"
-    : mood === "stressed"
-    ? "Stressed"
-    : "Steady";
-}
-export function dailyFlavor(mood: string, completed: number): string {
-  const pool = FLAVORS[mood] ?? FLAVORS.neutral;
-  return pool[completed % pool.length];
+
+export function moodLabel(mood: Mood): string {
+  return {
+    stalwart: "Stalwart",
+    wavering: "Wavering",
+    resilient: "Resilient",
+    fractured: "Fractured",
+    quiet: "Quiet",
+    overclocked: "Overclocked",
+    unburdened: "Unburdened",
+  }[mood];
 }
