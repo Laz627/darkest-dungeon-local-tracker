@@ -75,6 +75,40 @@ const HABITS: Habit[] = [
   },
 ];
 
+// === HEART SYSTEM ===
+const HEART_CORE_HABITS = [
+  "exercise", // movement / no exercise
+  "mental_health", // social media overuse
+  "physical_health", // caffeine overuse
+  "sleep_cpap", // sleep / CPAP
+] as const;
+
+type HeartCoreHabitId = (typeof HEART_CORE_HABITS)[number];
+
+function computeDailyHearts(entry: DayEntry): {
+  hearts: number;
+  max: number;
+  missing: HeartCoreHabitId[];
+} {
+  const max = HEART_CORE_HABITS.length;
+  if (!entry || !entry.completedHabitIds) {
+    return { hearts: 0, max, missing: [...HEART_CORE_HABITS] };
+  }
+
+  const completed = new Set(entry.completedHabitIds);
+  const missing: HeartCoreHabitId[] = [];
+
+  HEART_CORE_HABITS.forEach((id) => {
+    if (!completed.has(id)) {
+      missing.push(id);
+    }
+  });
+
+  const hearts = Math.max(0, max - missing.length);
+  return { hearts, max, missing };
+}
+
+
 // === STREAK ===
 function computeStreak(days: DaysState, startDate: string): number {
   let streak = 0;
@@ -143,6 +177,8 @@ export default function HomePage() {
   const boss = generateBossFight(weekStart, weeklyScore);
 
   const monthKey = getMonthKeyFromDate(currentDate);
+
+  const hearts = computeDailyHearts(entry);
 
   // === TASK TOGGLE ===
   const toggleHabit = (id: string) => {
@@ -263,6 +299,56 @@ export default function HomePage() {
 
       {/* MAIN CARD */}
       <main className="w-full max-w-4xl sanctum-card p-5 flex flex-col gap-6">
+        {/* HEARTS */}
+        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-red-900/40 bg-gradient-to-r from-black/60 via-zinc-900/70 to-red-950/40 rounded-xl px-4 py-3 shadow-[0_0_24px_rgba(0,0,0,0.85)]">
+          <div>
+            <div className="text-[0.7rem] uppercase tracking-[0.18em] text-red-300/80">
+              Vitality Ledger
+            </div>
+            <div className="text-xs text-amber-200/90">
+              Hearts fall when vices go unchallenged — movement, sleep, caffeine, and the siren-song of the feed.
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: hearts.max }).map((_, i) => {
+                const filled = i < hearts.hearts;
+                return (
+                  <span
+                    key={i}
+                    className={`w-7 h-7 flex items-center justify-center rounded-full border text-sm leading-none ${
+                      filled
+                        ? "bg-red-700/80 border-red-400 text-red-100 shadow-[0_0_18px_rgba(248,113,113,0.85)]"
+                        : "bg-zinc-950/80 border-zinc-700 text-zinc-500"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    ♥
+                  </span>
+                );
+              })}
+            </div>
+            <div className="text-[0.65rem] text-amber-300/80">
+              {hearts.hearts === hearts.max ? (
+                <>Resolutions intact. The vices skulk in silence.</>
+              ) : hearts.hearts === 0 ? (
+                <>A grim tally. All four pillars were left undefended.</>
+              ) : (
+                <>
+                  Lost hearts:{" "}
+                  {hearts.missing
+                    .map((id) => {
+                      const habit = HABITS.find((h) => h.id === id);
+                      return habit ? habit.label : id;
+                    })
+                    .join(", ")}
+                  .
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* TITLE */}
         <section>
           <DailyTitle
