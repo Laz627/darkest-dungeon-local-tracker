@@ -141,6 +141,71 @@ function computeStreak(days: DaysState, startDate: string): number {
   return streak;
 }
 
+// === WEEKLY TASK HELPERS ===
+function computeWeeklyTaskBuff(
+  weekStart: string,
+  tasksByDate: Record<string, DailyTask[]>
+): string {
+  const dailyPercents: number[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = shiftDate(weekStart, i);
+    const tasks = tasksByDate[d] ?? [];
+    if (!tasks.length) continue;
+
+    const completed = tasks.filter((t) => t.completed).length;
+    const percent = Math.round((completed / tasks.length) * 100);
+    dailyPercents.push(percent);
+  }
+
+  if (dailyPercents.length === 0) return "";
+
+  const avg =
+    dailyPercents.reduce((sum, val) => sum + val, 0) / dailyPercents.length;
+
+  if (avg < 40) {
+    return "Yet your side contracts lay mostly neglected, granting the foe small but telling advantages.";
+  }
+  if (avg < 80) {
+    return "Steady attention to lesser contracts blunted the enemy’s advance.";
+  }
+  return "Meticulous completion of every side contract turned small gains into a crushing strategic edge.";
+}
+
+function computeWeeklyTaskXP(
+  weekStart: string,
+  tasksByDate: Record<string, DailyTask[]>
+) {
+  let completedCount = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const d = shiftDate(weekStart, i);
+    const tasks = tasksByDate[d] ?? [];
+    completedCount += tasks.filter((t) => t.completed).length;
+  }
+
+  const xpPerTask = 5;
+  const maxXp = 100;
+  let xp = completedCount * xpPerTask;
+  if (xp > maxXp) xp = maxXp;
+
+  const percent = Math.round((xp / maxXp) * 100);
+
+  let label: string;
+  if (xp === 0) {
+    label = "No XP gained from side contracts.";
+  } else if (percent < 40) {
+    label = "A trickle of XP flows from scattered efforts.";
+  } else if (percent < 80) {
+    label = "Solid XP accumulates from consistent side contracts.";
+  } else {
+    label = "Task XP surges, empowering this week’s encounter.";
+  }
+
+  return { xp, maxXp, percent, label };
+}
+
+
 // === WEEKLY SCORE ===
 function computeWeeklyScore(days: DaysState, endDate: string): number {
   let score = 0;
