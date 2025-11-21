@@ -9,14 +9,13 @@ import {
   getMonthKeyFromDate,
   getWeekStart,
 } from "@/lib/date";
-import { computeMood, moodLabel } from "@/lib/mood";
+import { computeMood } from "@/lib/mood";
 import { generateBossFight } from "@/lib/boss";
 import HabitGrid from "@/components/HabitGrid";
 import DailyTitle from "@/components/DailyTitle";
 import MiniCalendar from "@/components/MiniCalendar";
 import BossFightCard from "@/components/BossFightCard";
 import DailyTasksSection from "@/components/DailyTasks";
-
 
 // === HABITS ===
 const HABITS: Habit[] = [
@@ -94,7 +93,7 @@ const HEART_HABIT_LABELS: Record<string, string> = {
   exercise: "Steel the Flesh",
   mental_health: "Mute the Sirens",
   physical_health: "Temper the Brew",
-  sleep_cpap: "Ward the Breath",
+  sleep_cpap: "Ward the Night",
 };
 
 function computeHeartStatus(entry: DayEntry) {
@@ -125,7 +124,6 @@ function computeHeartStatus(entry: DayEntry) {
   return { heartsRemaining, totalHearts, missingLabels, flavor };
 }
 
-
 // === STREAK ===
 function computeStreak(days: DaysState, startDate: string): number {
   let streak = 0;
@@ -139,6 +137,17 @@ function computeStreak(days: DaysState, startDate: string): number {
     cursor = shiftDate(cursor, -1);
   }
   return streak;
+}
+
+// === WEEKLY SCORE ===
+function computeWeeklyScore(days: DaysState, endDate: string): number {
+  let score = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = shiftDate(endDate, -i);
+    const entry = days[d];
+    score += entry?.completedHabitIds.length ?? 0;
+  }
+  return score;
 }
 
 // === WEEKLY TASK HELPERS ===
@@ -205,99 +214,26 @@ function computeWeeklyTaskXP(
   return { xp, maxXp, percent, label };
 }
 
-
-// === WEEKLY SCORE ===
-function computeWeeklyScore(days: DaysState, endDate: string): number {
-  let score = 0;
-  for (let i = 0; i < 7; i++) {
-    const d = shiftDate(endDate, -i);
-    const entry = days[d];
-    score += entry?.completedHabitIds.length ?? 0;
-  }
-  return score;
-  
-function computeWeeklyTaskBuff(
-  weekStart: string,
-  tasksByDate: Record<string, DailyTask[]>
-): string {
-  const dailyPercents: number[] = [];
-
-  for (let i = 0; i < 7; i++) {
-    const d = shiftDate(weekStart, i);
-    const tasks = tasksByDate[d] ?? [];
-    if (!tasks.length) continue;
-    const completed = tasks.filter((t) => t.completed).length;
-    const percent = tasks.length === 0 ? 0 : Math.round((completed / tasks.length) * 100);
-    dailyPercents.push(percent);
-  }
-
-  if (dailyPercents.length === 0) return "";
-
-  const avg =
-    dailyPercents.reduce((sum, val) => sum + val, 0) / dailyPercents.length;
-
-  if (avg < 40) {
-    return "Yet your side contracts lay mostly neglected, granting the foe small but telling advantages.";
-  }
-  if (avg < 80) {
-    return "Steady attention to lesser contracts blunted the enemy’s advance.";
-  }
-  return "Meticulous completion of every side contract turned small gains into a crushing strategic edge.";
-}
-
-function computeWeeklyTaskXP(
-  weekStart: string,
-  tasksByDate: Record<string, DailyTask[]>
-) {
-  let completedCount = 0;
-
-  for (let i = 0; i < 7; i++) {
-    const d = shiftDate(weekStart, i);
-    const tasks = tasksByDate[d] ?? [];
-    completedCount += tasks.filter((t) => t.completed).length;
-  }
-
-  const xpPerTask = 5;
-  const maxXp = 100;
-  let xp = completedCount * xpPerTask;
-  if (xp > maxXp) xp = maxXp;
-
-  const percent = Math.round((xp / maxXp) * 100);
-
-  let label: string;
-  if (xp === 0) {
-    label = "No XP gained from side contracts.";
-  } else if (percent < 40) {
-    label = "A trickle of XP flows from scattered efforts.";
-  } else if (percent < 80) {
-    label = "Solid XP accumulates from consistent side contracts.";
-  } else {
-    label = "Task XP surges, empowering this week’s encounter.";
-  }
-
-  return { xp, maxXp, percent, label };
-}
-
-}
-
 export default function HomePage() {
   const [days, setDays] = useState<DaysState>({});
   const [currentDate, setCurrentDate] = useState<string>(todayISO());
   const [ready, setReady] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [tasksByDate, setTasksByDate] = useState<Record<string, DailyTask[]>>(
+    {}
+  );
 
-    const [tasksByDate, setTasksByDate] = useState<Record<string, DailyTask[]>>({});
-
-const today = todayISO();
+  const today = todayISO();
   const isToday = currentDate === today;
 
   // === INITIAL LOAD ===
   useEffect(() => {
     setDays(loadDays());
     try {
-      const raw = typeof window !== "undefined"
-        ? window.localStorage.getItem("darkSanctumTasksV1")
-        : null;
+      const raw =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("darkSanctumTasksV1")
+          : null;
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === "object") {
@@ -310,7 +246,7 @@ const today = todayISO();
     setReady(true);
   }, []);
 
-// === SAVE ===
+  // === SAVE ===
   useEffect(() => {
     if (ready) saveDays(days);
   }, [days, ready]);
@@ -403,8 +339,6 @@ const today = todayISO();
     () => computeWeeklyTaskXP(weekStart, tasksByDate),
     [weekStart, tasksByDate]
   );
-
-  const monthKey = getMonthKeyFromDate(currentDate);
 
   const monthKey = getMonthKeyFromDate(currentDate);
 
@@ -579,11 +513,11 @@ const today = todayISO();
           onDeleteTask={deleteTask}
         />
 
-
-
         {/* NOTES */}
         <section>
-          <h3 className="text-sm font-semibold mb-1 text-amber-100">Chronicle</h3>
+          <h3 className="text-sm font-semibold mb-1 text-amber-100">
+            Chronicle
+          </h3>
           <textarea
             value={entry.note ?? ""}
             onChange={(e) => updateNote(e.target.value)}
