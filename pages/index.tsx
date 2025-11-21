@@ -197,7 +197,7 @@ function computeWeeklyTaskXP(
   let xp = completedCount * xpPerTask;
   if (xp > maxXp) xp = maxXp;
 
-  const percent = maxXp === 0 ? 0 : Math.round((xp / maxXp) * 100);
+  const percent = Math.round((xp / maxXp) * 100);
 
   let label: string;
   if (xp === 0) {
