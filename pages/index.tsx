@@ -15,6 +15,8 @@ import HabitGrid from "@/components/HabitGrid";
 import DailyTitle from "@/components/DailyTitle";
 import MiniCalendar from "@/components/MiniCalendar";
 import BossFightCard from "@/components/BossFightCard";
+import DailyTasksSection from "@/components/DailyTasks";
+
 
 // === HABITS ===
 const HABITS: Habit[] = [
@@ -75,37 +77,52 @@ const HABITS: Habit[] = [
   },
 ];
 
-// === HEART SYSTEM ===
-const HEART_CORE_HABITS = [
-  "exercise", // movement / no exercise
-  "mental_health", // social media overuse
-  "physical_health", // caffeine overuse
-  "sleep_cpap", // sleep / CPAP
+interface DailyTask {
+  id: string;
+  label: string;
+  completed: boolean;
+}
+
+const HEART_HABIT_IDS = [
+  "exercise",
+  "mental_health",
+  "physical_health",
+  "sleep_cpap",
 ] as const;
 
-type HeartCoreHabitId = (typeof HEART_CORE_HABITS)[number];
+const HEART_HABIT_LABELS: Record<string, string> = {
+  exercise: "Steel the Flesh",
+  mental_health: "Mute the Sirens",
+  physical_health: "Temper the Brew",
+  sleep_cpap: "Ward the Breath",
+};
 
-function computeDailyHearts(entry: DayEntry): {
-  hearts: number;
-  max: number;
-  missing: HeartCoreHabitId[];
-} {
-  const max = HEART_CORE_HABITS.length;
-  if (!entry || !entry.completedHabitIds) {
-    return { hearts: 0, max, missing: [...HEART_CORE_HABITS] };
+function computeHeartStatus(entry: DayEntry) {
+  const totalHearts = HEART_HABIT_IDS.length;
+  const missingLabels: string[] = [];
+
+  for (const id of HEART_HABIT_IDS) {
+    if (!entry.completedHabitIds.includes(id)) {
+      const label = HEART_HABIT_LABELS[id];
+      if (label) missingLabels.push(label);
+    }
   }
 
-  const completed = new Set(entry.completedHabitIds);
-  const missing: HeartCoreHabitId[] = [];
+  const heartsRemaining = totalHearts - missingLabels.length;
 
-  HEART_CORE_HABITS.forEach((id) => {
-    if (!completed.has(id)) {
-      missing.push(id);
-    }
-  });
+  let flavor: string;
+  if (heartsRemaining === totalHearts) {
+    flavor =
+      "Resolutions intact. The vices skulk in silence—for now.";
+  } else if (heartsRemaining <= 0) {
+    flavor =
+      "A grim tally. All four pillars were left undefended.";
+  } else {
+    const lostList = missingLabels.join(", ");
+    flavor = `Cracks in the bulwark—today, you yielded on: ${lostList}.`;
+  }
 
-  const hearts = Math.max(0, max - missing.length);
-  return { hearts, max, missing };
+  return { heartsRemaining, totalHearts, missingLabels, flavor };
 }
 
 
@@ -133,6 +150,69 @@ function computeWeeklyScore(days: DaysState, endDate: string): number {
     score += entry?.completedHabitIds.length ?? 0;
   }
   return score;
+
+function computeWeeklyTaskBuff(
+  weekStart: string,
+  tasksByDate: Record<string, DailyTask[]>
+): string {
+  const dailyPercents: number[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = shiftDate(weekStart, i);
+    const tasks = tasksByDate[d] ?? [];
+    if (!tasks.length) continue;
+    const completed = tasks.filter((t) => t.completed).length;
+    const percent = tasks.length === 0 ? 0 : Math.round((completed / tasks.length) * 100);
+    dailyPercents.push(percent);
+  }
+
+  if (dailyPercents.length === 0) return "";
+
+  const avg =
+    dailyPercents.reduce((sum, val) => sum + val, 0) / dailyPercents.length;
+
+  if (avg < 40) {
+    return "Yet your side contracts lay mostly neglected, granting the foe small but telling advantages.";
+  }
+  if (avg < 80) {
+    return "Steady attention to lesser contracts blunted the enemy’s advance.";
+  }
+  return "Meticulous completion of every side contract turned small gains into a crushing strategic edge.";
+}
+
+function computeWeeklyTaskXP(
+  weekStart: string,
+  tasksByDate: Record<string, DailyTask[]>
+) {
+  let completedCount = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const d = shiftDate(weekStart, i);
+    const tasks = tasksByDate[d] ?? [];
+    completedCount += tasks.filter((t) => t.completed).length;
+  }
+
+  const xpPerTask = 5;
+  const maxXp = 100;
+  let xp = completedCount * xpPerTask;
+  if (xp > maxXp) xp = maxXp;
+
+  const percent = maxXp === 0 ? 0 : Math.round((xp / maxXp) * 100);
+
+  let label: string;
+  if (xp === 0) {
+    label = "No XP gained from side contracts.";
+  } else if (percent < 40) {
+    label = "A trickle of XP flows from scattered efforts.";
+  } else if (percent < 80) {
+    label = "Solid XP accumulates from consistent side contracts.";
+  } else {
+    label = "Task XP surges, empowering this week’s encounter.";
+  }
+
+  return { xp, maxXp, percent, label };
+}
+
 }
 
 export default function HomePage() {
@@ -141,22 +221,87 @@ export default function HomePage() {
   const [ready, setReady] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  const today = todayISO();
+    const [tasksByDate, setTasksByDate] = useState<Record<string, DailyTask[]>>({});
+
+const today = todayISO();
   const isToday = currentDate === today;
 
   // === INITIAL LOAD ===
   useEffect(() => {
     setDays(loadDays());
+    try {
+      const raw = typeof window !== "undefined"
+        ? window.localStorage.getItem("darkSanctumTasksV1")
+        : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          setTasksByDate(parsed);
+        }
+      }
+    } catch {
+      // ignore malformed task data
+    }
     setReady(true);
   }, []);
 
-  // === SAVE ===
+// === SAVE ===
   useEffect(() => {
     if (ready) saveDays(days);
   }, [days, ready]);
 
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          "darkSanctumTasksV1",
+          JSON.stringify(tasksByDate)
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, [tasksByDate, ready]);
+
   const entry: DayEntry =
     days[currentDate] || { date: currentDate, completedHabitIds: [] };
+
+  const heartStatus = useMemo(() => computeHeartStatus(entry), [entry]);
+
+  const tasksForDay: DailyTask[] = tasksByDate[currentDate] ?? [];
+
+  const addTask = (label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setTasksByDate((prev) => {
+      const existing = prev[currentDate] ?? [];
+      const newTask: DailyTask = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        label: trimmed,
+        completed: false,
+      };
+      return { ...prev, [currentDate]: [...existing, newTask] };
+    });
+  };
+
+  const toggleTaskCompletion = (id: string) => {
+    setTasksByDate((prev) => {
+      const existing = prev[currentDate] ?? [];
+      const updated = existing.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      );
+      return { ...prev, [currentDate]: updated };
+    });
+  };
+
+  const deleteTask = (id: string) => {
+    setTasksByDate((prev) => {
+      const existing = prev[currentDate] ?? [];
+      const updated = existing.filter((task) => task.id !== id);
+      return { ...prev, [currentDate]: updated };
+    });
+  };
 
   const mood = computeMood(entry);
 
@@ -176,9 +321,27 @@ export default function HomePage() {
   const weekStart = getWeekStart(today);
   const boss = generateBossFight(weekStart, weeklyScore);
 
+  const taskBuff = useMemo(
+    () => computeWeeklyTaskBuff(weekStart, tasksByDate),
+    [weekStart, tasksByDate]
+  );
+
+  const enhancedBoss = useMemo(
+    () => ({
+      ...boss,
+      description: taskBuff ? boss.description + " " + taskBuff : boss.description,
+    }),
+    [boss, taskBuff]
+  );
+
+  const weeklyTaskXP = useMemo(
+    () => computeWeeklyTaskXP(weekStart, tasksByDate),
+    [weekStart, tasksByDate]
+  );
+
   const monthKey = getMonthKeyFromDate(currentDate);
 
-  const hearts = computeDailyHearts(entry);
+  const monthKey = getMonthKeyFromDate(currentDate);
 
   // === TASK TOGGLE ===
   const toggleHabit = (id: string) => {
@@ -299,58 +462,37 @@ export default function HomePage() {
 
       {/* MAIN CARD */}
       <main className="w-full max-w-4xl sanctum-card p-5 flex flex-col gap-6">
-        {/* HEARTS */}
-        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-red-900/40 bg-gradient-to-r from-black/60 via-zinc-900/70 to-red-950/40 rounded-xl px-4 py-3 shadow-[0_0_24px_rgba(0,0,0,0.85)]">
-          <div>
-            <div className="text-[0.7rem] uppercase tracking-[0.18em] text-red-300/80">
-              Vitality Ledger
-            </div>
-            <div className="text-xs text-amber-200/90">
-              Hearts fall when vices go unchallenged — movement, sleep, caffeine, and the siren-song of the feed.
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-1">
-              {Array.from({ length: hearts.max }).map((_, i) => {
-                const filled = i < hearts.hearts;
-                return (
-                  <span
-                    key={i}
-                    className={`w-7 h-7 flex items-center justify-center rounded-full border text-sm leading-none ${
-                      filled
-                        ? "bg-red-700/80 border-red-400 text-red-100 shadow-[0_0_18px_rgba(248,113,113,0.85)]"
-                        : "bg-zinc-950/80 border-zinc-700 text-zinc-500"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    ♥
-                  </span>
-                );
-              })}
-            </div>
-            <div className="text-[0.65rem] text-amber-300/80">
-              {hearts.hearts === hearts.max ? (
-                <>Resolutions intact. The vices skulk in silence.</>
-              ) : hearts.hearts === 0 ? (
-                <>A grim tally. All four pillars were left undefended.</>
-              ) : (
-                <>
-                  Lost hearts:{" "}
-                  {hearts.missing
-                    .map((id) => {
-                      const habit = HABITS.find((h) => h.id === id);
-                      return habit ? habit.label : id;
-                    })
-                    .join(", ")}
-                  .
-                </>
-              )}
-            </div>
-          </div>
-        </section>
-
         {/* TITLE */}
         <section>
+          {/* Hearts */}
+          <div className="mb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {Array.from({ length: heartStatus.totalHearts }).map((_, i) => {
+                  const filled = i < heartStatus.heartsRemaining;
+                  return (
+                    <span
+                      key={i}
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-xs ${
+                        filled
+                          ? "border-rose-300 bg-rose-500/90 text-slate-900 shadow-[0_0_8px_rgba(248,113,113,0.7)]"
+                          : "border-slate-600 bg-slate-900 text-slate-500"
+                      }`}
+                    >
+                      ♥
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="text-[0.65rem] uppercase tracking-wide text-amber-300/80">
+                {heartStatus.heartsRemaining}/{heartStatus.totalHearts} Hearts
+              </div>
+            </div>
+            <p className="mt-1 text-[0.7rem] text-amber-300/80">
+              {heartStatus.flavor}
+            </p>
+          </div>
+
           <DailyTitle
             date={currentDate}
             mood={mood}
@@ -363,6 +505,16 @@ export default function HomePage() {
 
         {/* HABITS */}
         <HabitGrid habits={HABITS} entry={entry} onToggle={toggleHabit} />
+
+        {/* DAILY TASKS */}
+        <DailyTasksSection
+          tasks={tasksForDay}
+          onAddTask={addTask}
+          onToggleTask={toggleTaskCompletion}
+          onDeleteTask={deleteTask}
+        />
+
+
 
         {/* NOTES */}
         <section>
@@ -413,7 +565,26 @@ export default function HomePage() {
             <h3 className="text-sm font-semibold mb-2 text-amber-100">
               This Week&apos;s Boss
             </h3>
-            <BossFightCard boss={boss} />
+
+            <div className="mb-2">
+              <div className="flex justify-between text-[0.65rem] text-amber-300/80 mb-1">
+                <span>Task XP</span>
+                <span>
+                  {weeklyTaskXP.xp}/{weeklyTaskXP.maxXp}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full bg-emerald-400"
+                  style={{ width: `${weeklyTaskXP.percent}%` }}
+                />
+              </div>
+              <p className="mt-1 text-[0.65rem] text-amber-300/80">
+                {weeklyTaskXP.label}
+              </p>
+            </div>
+
+            <BossFightCard boss={enhancedBoss} />
           </div>
         </section>
       </main>
