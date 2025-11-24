@@ -1,7 +1,8 @@
 // === DARK SANCTUM — FULL VERSION ===
 
 import { useEffect, useMemo, useState } from "react";
-import { DayEntry, DaysState, Habit } from "@/types";
+import { DayEntry, DaysState, Habit, TrainingLog } from "@/types";
+import TrainingLog from "@/components/TrainingLog";
 import { loadDays, saveDays, exportDays, importDays } from "@/lib/storage";
 import {
   todayISO,
@@ -139,11 +140,13 @@ function computeStreak(days: DaysState, startDate: string): number {
   return streak;
 }
 
-// === WEEKLY SCORE ===
-function computeWeeklyScore(days: DaysState, endDate: string): number {
+function computeWeeklyScore(days: DaysState, weekStart: string): number {
+  // Score is based on the calendar week (Mon–Sun) that begins at weekStart.
+  // This prevents last week’s wins from making the new boss look “already beaten”
+  // on Monday and aligns boss outcome with that specific week.
   let score = 0;
   for (let i = 0; i < 7; i++) {
-    const d = shiftDate(endDate, -i);
+    const d = shiftDate(weekStart, i);
     const entry = days[d];
     score += entry?.completedHabitIds.length ?? 0;
   }
@@ -304,6 +307,27 @@ export default function HomePage() {
     });
   };
 
+  const handleTrainingChange = (nextTraining: TrainingLog) => {
+  setDays((prev) => {
+    const existing: DayEntry =
+      prev[currentDate] || { date: currentDate, completedHabitIds: [] };
+
+    const updated: DayEntry = {
+      ...existing,
+      training: nextTraining,
+    };
+
+    const nextDays = {
+      ...prev,
+      [currentDate]: updated,
+    };
+
+    saveDays(nextDays);
+    return nextDays;
+  });
+};
+
+
   const mood = computeMood(entry);
 
   const streak = useMemo(() => computeStreak(days, today), [days, today]);
@@ -318,8 +342,8 @@ export default function HomePage() {
     return arr;
   }, [days, today]);
 
-  const weeklyScore = computeWeeklyScore(days, today);
-  const weekStart = getWeekStart(today);
+  const weekStart = getWeekStart(currentDate);
+  const weeklyScore = computeWeeklyScore(days, weekStart);
   const boss = generateBossFight(weekStart, weeklyScore);
 
   const taskBuff = useMemo(
@@ -513,6 +537,13 @@ export default function HomePage() {
           onDeleteTask={deleteTask}
         />
 
+        {/* Habits + tasks already here */}
+
+        <TrainingLog
+          training={entry.training}
+          onChange={handleTrainingChange}
+        />
+        
         {/* NOTES */}
         <section>
           <h3 className="text-sm font-semibold mb-1 text-amber-100">
