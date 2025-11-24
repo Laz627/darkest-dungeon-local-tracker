@@ -14,10 +14,10 @@ export default function BossFightCard({ boss }: Props) {
 
   const label =
     boss.outcome === "win"
-      ? "Victory"
+      ? "BOSS FELLED"
       : boss.outcome === "loss"
-      ? "Defeat"
-      : "Hard-Fought Draw";
+      ? "BOSS PREVAILS"
+      : "CLASH INCONCLUSIVE";
 
   return (
     <div className={`border ${color} rounded-lg p-3 text-xs bg-slate-900/70`}>
@@ -27,7 +27,14 @@ export default function BossFightCard({ boss }: Props) {
           {label} · D{boss.difficulty}
         </div>
       </div>
-      <p className="text-[0.7rem] text-slate-300">
+
+      {/* Static boss flavor */}
+      <p className="text-[0.7rem] text-slate-300 italic mb-1">
+        {boss.lore}
+      </p>
+
+      {/* Dynamic outcome summary for the week */}
+      <p className="text-[0.65rem] text-slate-400">
         {boss.description}
       </p>
     </div>
