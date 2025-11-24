@@ -2,8 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CoreLiftId, ExerciseLog, TrainingLog } from "@/types";
-import TrainingLog from "@/components/TrainingLog";
+import TrainingLogSection from "@/components/TrainingLog";
 import { loadDays, saveDays, exportDays, importDays } from "@/lib/storage";
+import type {
+  DayEntry,
+  DaysState,
+  Habit,
+  TrainingLog as TrainingLogType,
+} from "@/types";
 import {
   todayISO,
   shiftDate,
@@ -307,25 +313,25 @@ export default function HomePage() {
     });
   };
 
-  const handleTrainingChange = (nextTraining: TrainingLog) => {
-  setDays((prev) => {
-    const existing: DayEntry =
-      prev[currentDate] || { date: currentDate, completedHabitIds: [] };
-
-    const updated: DayEntry = {
-      ...existing,
-      training: nextTraining,
-    };
-
-    const nextDays = {
-      ...prev,
-      [currentDate]: updated,
-    };
-
-    saveDays(nextDays);
-    return nextDays;
-  });
-};
+  const handleTrainingChange = (nextTraining: TrainingLogType) => {
+    setDays((prev) => {
+      const existing: DayEntry =
+        prev[currentDate] || { date: currentDate, completedHabitIds: [] };
+  
+      const updated: DayEntry = {
+        ...existing,
+        training: nextTraining,
+      };
+  
+      const nextDays = {
+        ...prev,
+        [currentDate]: updated,
+      };
+  
+      saveDays(nextDays);
+      return nextDays;
+    });
+  };
 
 
   const mood = computeMood(entry);
@@ -539,7 +545,7 @@ export default function HomePage() {
 
         {/* Habits + tasks already here */}
 
-        <TrainingLog
+        <TrainingLogSection
           training={entry.training}
           onChange={handleTrainingChange}
         />
