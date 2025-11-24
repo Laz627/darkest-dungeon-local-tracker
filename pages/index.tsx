@@ -318,10 +318,13 @@ export default function HomePage() {
       const existing: DayEntry =
         prev[currentDate] || { date: currentDate, completedHabitIds: [] };
   
-      const updated: DayEntry = {
+      // Build the updated entry first, then assert its type so TS
+      // doesn’t run the “object literal may only specify known properties”
+      // check against DayEntry.
+      const updated = {
         ...existing,
         training: nextTraining,
-      };
+      } as DayEntry;
   
       const nextDays = {
         ...prev,
@@ -332,7 +335,6 @@ export default function HomePage() {
       return nextDays;
     });
   };
-
 
   const mood = computeMood(entry);
 
