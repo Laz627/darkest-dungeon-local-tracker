@@ -1,8 +1,14 @@
-import { CoreLiftId, ExerciseLog, TrainingLog } from "@/types";
+// components/TrainingLog.tsx
+
+import type {
+  CoreLiftId,
+  ExerciseLog,
+  TrainingLog as TrainingLogType,
+} from "@/types";
 
 interface TrainingLogProps {
-  training?: TrainingLog;
-  onChange: (training: TrainingLog) => void;
+  training?: TrainingLogType;
+  onChange: (training: TrainingLogType) => void;
 }
 
 const EXERCISES: { id: "run" | CoreLiftId; label: string }[] = [
@@ -13,7 +19,7 @@ const EXERCISES: { id: "run" | CoreLiftId; label: string }[] = [
 ];
 
 function getExerciseLog(
-  training: TrainingLog | undefined,
+  training: TrainingLogType | undefined,
   id: "run" | CoreLiftId
 ): ExerciseLog | undefined {
   if (!training) return undefined;
@@ -21,8 +27,11 @@ function getExerciseLog(
   return training.lifts?.[id];
 }
 
-export default function TrainingLog({ training, onChange }: TrainingLogProps) {
-  const current: TrainingLog = training ?? { lifts: {} };
+export default function TrainingLogSection({
+  training,
+  onChange,
+}: TrainingLogProps) {
+  const current: TrainingLogType = training ?? { lifts: {} };
 
   function updateExercise(
     id: "run" | CoreLiftId,
@@ -36,7 +45,7 @@ export default function TrainingLog({ training, onChange }: TrainingLogProps) {
 
     const updated: ExerciseLog = { ...existing, ...partial };
 
-    const next: TrainingLog =
+    const next: TrainingLogType =
       id === "run"
         ? { ...current, run: updated }
         : {
@@ -52,13 +61,18 @@ export default function TrainingLog({ training, onChange }: TrainingLogProps) {
 
   return (
     <section className="mt-4 border border-slate-700 rounded-lg p-3 bg-slate-950/60">
+      {/* DD-flavored header */}
       <div className="flex flex-col gap-0.5 mb-2">
         <div className="text-xs uppercase tracking-wide text-amber-400">
           Iron Rituals
         </div>
         <div className="text-[0.7rem] text-slate-400 italic">
-          Etch the strain of distance and iron into the ledger. Each honest
-          effort tempers the body against darker weeks.
+          In this dim ledger, you record the miles marched and iron moved. The
+          flesh remembers what the mind would rather forget.
+        </div>
+        <div className="text-[0.65rem] text-slate-500">
+          Log today&apos;s run and core lifts – a quiet tithe of pain paid
+          against future horrors.
         </div>
       </div>
 
@@ -79,8 +93,10 @@ export default function TrainingLog({ training, onChange }: TrainingLogProps) {
               key={id}
               className="contents border-t border-slate-800 pt-1 mt-1"
             >
+              {/* Exercise label */}
               <div className="pr-2 flex items-center">{label}</div>
 
+              {/* RPE input */}
               <div className="px-1 flex items-center justify-center">
                 <input
                   type="number"
@@ -100,6 +116,7 @@ export default function TrainingLog({ training, onChange }: TrainingLogProps) {
                 />
               </div>
 
+              {/* Weight / Duration input */}
               <div className="pl-1 flex items-center">
                 <input
                   type="text"
