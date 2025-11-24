@@ -1,7 +1,6 @@
 // === DARK SANCTUM — FULL VERSION ===
 
 import { useEffect, useMemo, useState } from "react";
-import type { CoreLiftId, ExerciseLog, TrainingLog } from "@/types";
 import TrainingLogSection from "@/components/TrainingLog";
 import { loadDays, saveDays, exportDays, importDays } from "@/lib/storage";
 import type {
@@ -23,6 +22,7 @@ import DailyTitle from "@/components/DailyTitle";
 import MiniCalendar from "@/components/MiniCalendar";
 import BossFightCard from "@/components/BossFightCard";
 import DailyTasksSection from "@/components/DailyTasks";
+
 
 // === HABITS ===
 const HABITS: Habit[] = [
