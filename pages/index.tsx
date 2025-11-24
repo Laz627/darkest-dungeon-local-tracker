@@ -1,7 +1,7 @@
 // === DARK SANCTUM — FULL VERSION ===
 
 import { useEffect, useMemo, useState } from "react";
-import { DayEntry, DaysState, Habit, TrainingLog } from "@/types";
+import type { CoreLiftId, ExerciseLog, TrainingLog } from "@/types";
 import TrainingLog from "@/components/TrainingLog";
 import { loadDays, saveDays, exportDays, importDays } from "@/lib/storage";
 import {
