@@ -1,4 +1,3 @@
-import { NotebookPen, ScrollText } from "lucide-react";
 import { Quest, QuestDay } from "@/types";
 import {
   computeQuestStreakStats,
@@ -29,21 +28,21 @@ export function QuestActiveCard({
 
   return (
     <div
-      className={`sanctum-card ${
-        highlight ? "border-[#c3a167] shadow-[0_0_18px_rgba(195,161,103,0.25)]" : "border-[#333]"
-      } p-4 shadow-md text-[0.95rem]`}
+      className={`rounded-lg border ${
+        highlight ? "border-amber-400/70" : "border-slate-700"
+      } bg-slate-900 p-4 shadow-md`}
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.16em] text-[#c3a167] font-serif">Active Quest</p>
-          <h3 className="text-base font-semibold text-[#e0e0e0] font-serif tracking-wider">{quest.title}</h3>
-          <p className="text-[0.78rem] text-[#7a7a7a] font-sans">{label}</p>
+          <p className="text-xs uppercase tracking-wide text-amber-400">Active Quest</p>
+          <h3 className="text-xl font-semibold text-white">{quest.title}</h3>
+          <p className="text-sm text-slate-300">{label}</p>
         </div>
-        <span className="sanctum-pill text-[10px] px-2 py-1 font-semibold">
+        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200">
           {questTypeLabel(quest.questType)}
         </span>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Progress" value={progressLabel} />
         <Stat label="Successes" value={counts.successes.toString()} />
         <Stat label="Failures" value={counts.fails.toString()} />
@@ -52,22 +51,22 @@ export function QuestActiveCard({
           value={streak.currentSuccessStreak > 0 ? `${streak.currentSuccessStreak} days held` : "—"}
         />
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
           onClick={onOpenLog}
-          className="sanctum-button"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
         >
-          <NotebookPen className="h-4 w-4" /> Log Outcome
+          Log Today’s Outcome
         </button>
         <button
           onClick={onViewDetail}
-          className="sanctum-link"
+          className="rounded-md border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-amber-400 hover:text-amber-200"
         >
-          <ScrollText className="h-4 w-4" /> View Log Timeline
+          View Log
         </button>
       </div>
       {streak.currentSuccessStreak > 0 && (
-        <p className="mt-2 text-[11px] text-[#c3a167]">
+        <p className="mt-3 text-xs text-amber-300">
           Current streak: {streak.currentSuccessStreak} days held.
         </p>
       )}
@@ -77,9 +76,9 @@ export function QuestActiveCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-[#333] bg-[#0c0c0c] px-2.5 py-2">
-      <p className="text-[10px] uppercase tracking-[0.14em] text-[#7a7a7a] font-serif">{label}</p>
-      <p className="text-[0.9rem] font-semibold text-[#e0e0e0]">{value}</p>
+    <div className="rounded-md bg-slate-800 px-3 py-2">
+      <p className="text-[11px] uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-sm font-semibold text-white">{value}</p>
     </div>
   );
 }
