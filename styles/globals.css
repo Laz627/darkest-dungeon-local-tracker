@@ -3,12 +3,10 @@
 @tailwind utilities;
 
 body {
-  @apply text-amber-50;
+  @apply text-[#e0e0e0] bg-[#0c0c0c] font-sans;
   background:
-    radial-gradient(circle at top, #5a281c 0, #12040b 40%, #050309 100%),
-    #050309;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+    radial-gradient(circle at top, #1a1a1a 0, #0f0f0f 40%, #0c0c0c 100%),
+    #0c0c0c;
 }
 
 /* Main wrapper */
@@ -18,21 +16,37 @@ body {
 
 /* Core card */
 .sanctum-card {
-  @apply bg-[#12070b]/90 border border-[#3e1d26] rounded-lg shadow-2xl backdrop-blur-sm;
+  @apply bg-[#111111] border border-[#333] rounded-lg shadow-2xl backdrop-blur-sm text-[#e0e0e0];
 }
 
 /* Buttons and pills */
 .sanctum-pill {
-  @apply border border-[#6e3524] rounded-full bg-[#1b0707] text-amber-200 px-3 py-1
-         hover:bg-[#2a0b0b] hover:border-[#ffb45a] transition;
+  @apply border border-[#c3a167] rounded-full bg-[#1a1a1a] text-[#c3a167] px-3 py-1 text-[11px] uppercase tracking-[0.08em]
+         hover:bg-[#8a1c1c]/40 hover:border-[#8a1c1c] transition;
+}
+
+.sanctum-button {
+  @apply inline-flex items-center justify-center gap-2 rounded border border-[#c3a167] bg-[#1a1a1a] text-[#e0e0e0]
+         px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] shadow-sm transition
+         hover:bg-[#8a1c1c] hover:border-[#8a1c1c] hover:text-[#f7f1e3];
+}
+
+.sanctum-button-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded border border-[#333] bg-[#0c0c0c] text-[#c3a167]
+         px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition hover:border-[#c3a167] hover:bg-[#1a1a1a];
+}
+
+.sanctum-link {
+  @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#c3a167]
+         transition hover:text-[#f7f1e3];
 }
 
 /* Habit states */
 .habit-active {
-  @apply bg-amber-600/20 border-amber-500 shadow;
+  @apply bg-[#8a1c1c]/30 border-[#c3a167] shadow;
 }
 .habit-inactive {
-  @apply bg-black/20 border-gray-800 hover:bg-black/40 transition;
+  @apply bg-black/20 border-[#333] hover:bg-black/40 transition;
 }
 
 /* Calendar styling */
@@ -40,11 +54,11 @@ body {
   @apply w-8 h-8 flex items-center justify-center text-xs rounded-md;
 }
 .calendar-day-today {
-  @apply bg-amber-700/40 border border-amber-500;
+  @apply bg-[#8a1c1c]/30 border border-[#c3a167];
 }
 .calendar-day-complete {
-  @apply bg-amber-600/30;
+  @apply bg-[#c3a167]/20;
 }
 .calendar-day-empty {
-  @apply bg-black/20 border border-gray-700;
+  @apply bg-black/20 border border-[#333];
 }
