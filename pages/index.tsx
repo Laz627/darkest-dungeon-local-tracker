@@ -272,7 +272,6 @@ export default function HomePage() {
 
   const today = todayISO();
   const isToday = currentDate === today;
-  const questVisibleForDate = !!activeQuest && currentDate >= activeQuest.startDate;
 
 
   // === INITIAL LOAD ===
@@ -391,6 +390,9 @@ export default function HomePage() {
     () => questState.quests.find((q) => q.status === "ACTIVE"),
     [questState.quests]
   );
+
+  const questVisibleForDate = !!activeQuest && currentDate >= activeQuest.startDate;
+
 
   const activeQuestDays = useMemo(
     () =>
