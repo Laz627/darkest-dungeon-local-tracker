@@ -648,6 +648,108 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* QUESTS */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-amber-100">Quest Campaign</h3>
+            {!activeQuest && (
+              <span className="text-xs text-slate-300">
+                Choose a template and begin a mini-campaign.
+              </span>
+            )}
+          </div>
+
+          {activeQuest ? (
+            <div className="space-y-3">
+              <QuestActiveCard
+                quest={activeQuest}
+                questDays={activeQuestDays}
+                onOpenLog={() => setLogOpen(true)}
+                onViewDetail={() =>
+                  document.getElementById("quest-detail")?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+                }
+              />
+              <div id="quest-detail">
+                <QuestDetail quest={activeQuest} questDays={activeQuestDays} />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 shadow">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-xs text-amber-100">
+                  Template
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(e) => setSelectedTemplateId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  >
+                    {QUEST_TEMPLATES.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-amber-100">
+                  Archetype
+                  <select
+                    value={customArchetype}
+                    onChange={(e) =>
+                      setCustomArchetype(e.target.value as QuestArchetype)
+                    }
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  >
+                    <option value="discipline_pact">Discipline Pact</option>
+                    <option value="health_rite">Health Rite</option>
+                    <option value="recovery_vigil">Recovery Vigil</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
+
+                <label className="text-xs text-amber-100">
+                  Title
+                  <input
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    placeholder="Name your quest"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  />
+                </label>
+
+                <label className="text-xs text-amber-100">
+                  Duration (days)
+                  <input
+                    type="number"
+                    min={1}
+                    value={customDuration}
+                    onChange={(e) => setCustomDuration(Number(e.target.value))}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  />
+                </label>
+
+                <label className="text-xs text-amber-100 sm:col-span-2">
+                  Objective prompt
+                  <input
+                    value={customIntro}
+                    onChange={(e) => setCustomIntro(e.target.value)}
+                    placeholder="What vow are you making?"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  />
+                </label>
+              </div>
+              <button
+                onClick={startQuest}
+                className="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                Begin Quest
+              </button>
+            </div>
+          )}
+        </section>
+
         {/* HABITS */}
         <HabitGrid habits={HABITS} entry={entry} onToggle={toggleHabit} />
 
@@ -677,19 +779,32 @@ export default function HomePage() {
             )}
           </div>
 
+
           {activeQuest ? (
             <div className="space-y-3">
-              <QuestActiveCard
-                quest={activeQuest}
-                questDays={activeQuestDays}
-                onOpenLog={isToday ? () => setLogOpen(true) : undefined}
-                onViewDetail={() =>
-                  document.getElementById("quest-detail")?.scrollIntoView({
-                    behavior: "smooth",
-                  })
-                }
-                isToday={isToday}
-              />
+              {isToday ? (
+                <QuestActiveCard
+                  quest={activeQuest}
+                  questDays={activeQuestDays}
+                  onOpenLog={() => setLogOpen(true)}
+                  onViewDetail={() =>
+                    document.getElementById("quest-detail")?.scrollIntoView({
+                      behavior: "smooth",
+                    })
+                  }
+                  isToday
+                />
+              ) : (
+                <QuestActiveCard
+                  quest={activeQuest}
+                  questDays={activeQuestDays}
+                  onViewDetail={() =>
+                    document.getElementById("quest-detail")?.scrollIntoView({
+                      behavior: "smooth",
+                    })
+                  }
+                />
+              )}
               <div id="quest-detail">
                 <QuestDetail quest={activeQuest} questDays={activeQuestDays} />
               </div>
@@ -761,7 +876,7 @@ export default function HomePage() {
               </div>
               <button
                 onClick={startQuest}
-                className="mt-3 rounded-md border border-amber-600 bg-[#2a0b0b] px-3 py-1.5 text-sm font-semibold text-amber-100 transition hover:border-amber-400 hover:bg-[#3a0f0f]"
+                className="mt-3 rounded-md border border-amber-700 bg-[#3e1d26] px-4 py-1.5 text-xs font-semibold text-amber-100 transition hover:border-amber-400 hover:bg-[#3a0f0f]"
               >
                 Begin Quest
               </button>
