@@ -648,6 +648,108 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* QUESTS */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-amber-100">Quest Campaign</h3>
+            {!activeQuest && (
+              <span className="text-xs text-slate-300">
+                Choose a template and begin a mini-campaign.
+              </span>
+            )}
+          </div>
+
+          {activeQuest ? (
+            <div className="space-y-3">
+              <QuestActiveCard
+                quest={activeQuest}
+                questDays={activeQuestDays}
+                onOpenLog={() => setLogOpen(true)}
+                onViewDetail={() =>
+                  document.getElementById("quest-detail")?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+                }
+              />
+              <div id="quest-detail">
+                <QuestDetail quest={activeQuest} questDays={activeQuestDays} />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-slate-800 bg-slate-900 p-4 shadow">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-xs text-amber-100">
+                  Template
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(e) => setSelectedTemplateId(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  >
+                    {QUEST_TEMPLATES.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="text-xs text-amber-100">
+                  Archetype
+                  <select
+                    value={customArchetype}
+                    onChange={(e) =>
+                      setCustomArchetype(e.target.value as QuestArchetype)
+                    }
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  >
+                    <option value="discipline_pact">Discipline Pact</option>
+                    <option value="health_rite">Health Rite</option>
+                    <option value="recovery_vigil">Recovery Vigil</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
+
+                <label className="text-xs text-amber-100">
+                  Title
+                  <input
+                    value={customTitle}
+                    onChange={(e) => setCustomTitle(e.target.value)}
+                    placeholder="Name your quest"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  />
+                </label>
+
+                <label className="text-xs text-amber-100">
+                  Duration (days)
+                  <input
+                    type="number"
+                    min={1}
+                    value={customDuration}
+                    onChange={(e) => setCustomDuration(Number(e.target.value))}
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  />
+                </label>
+
+                <label className="text-xs text-amber-100 sm:col-span-2">
+                  Objective prompt
+                  <input
+                    value={customIntro}
+                    onChange={(e) => setCustomIntro(e.target.value)}
+                    placeholder="What vow are you making?"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
+                  />
+                </label>
+              </div>
+              <button
+                onClick={startQuest}
+                className="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                Begin Quest
+              </button>
+            </div>
+          )}
+        </section>
+
         {/* HABITS */}
         <HabitGrid habits={HABITS} entry={entry} onToggle={toggleHabit} />
 
@@ -694,26 +796,14 @@ export default function HomePage() {
               </div>
             </div>
           ) : (
-            <div className="sanctum-card border-[#3e1d26] p-4 shadow">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-amber-400">Mini-Campaign</p>
-                  <p className="text-[0.85rem] text-amber-200/80">
-                    Choose a template, set the vow, and march.
-                  </p>
-                </div>
-                <span className="hidden text-[0.75rem] text-amber-300/80 sm:block">
-                  One CTA, one path forward.
-                </span>
-              </div>
-
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="sanctum-card border-[#3e1d26] p-3 shadow">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <label className="text-xs text-amber-100">
                   Template
                   <select
                     value={selectedTemplateId}
                     onChange={(e) => setSelectedTemplateId(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-[#3e1d26] bg-[#0b0508]/80 p-2 text-sm text-amber-50 shadow-inner focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
                   >
                     {QUEST_TEMPLATES.map((template) => (
                       <option key={template.id} value={template.id}>
@@ -730,7 +820,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setCustomArchetype(e.target.value as QuestArchetype)
                     }
-                    className="mt-1 w-full rounded-md border border-[#3e1d26] bg-[#0b0508]/80 p-2 text-sm text-amber-50 shadow-inner focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
                   >
                     <option value="discipline_pact">Discipline Pact</option>
                     <option value="health_rite">Health Rite</option>
@@ -745,7 +835,7 @@ export default function HomePage() {
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
                     placeholder="Name your quest"
-                    className="mt-1 w-full rounded-md border border-[#3e1d26] bg-[#0b0508]/80 p-2 text-sm text-amber-50 shadow-inner placeholder:text-amber-300/60 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
                   />
                 </label>
 
@@ -756,7 +846,7 @@ export default function HomePage() {
                     min={1}
                     value={customDuration}
                     onChange={(e) => setCustomDuration(Number(e.target.value))}
-                    className="mt-1 w-full rounded-md border border-[#3e1d26] bg-[#0b0508]/80 p-2 text-sm text-amber-50 shadow-inner focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
                   />
                 </label>
 
@@ -766,15 +856,16 @@ export default function HomePage() {
                     value={customIntro}
                     onChange={(e) => setCustomIntro(e.target.value)}
                     placeholder="What vow are you making?"
-                    className="mt-1 w-full rounded-md border border-[#3e1d26] bg-[#0b0508]/80 p-2 text-sm text-amber-50 shadow-inner placeholder:text-amber-300/60 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 p-2 text-sm text-amber-50"
                   />
                 </label>
               </div>
-              <div className="mt-4 flex justify-end">
-                <button onClick={startQuest} className="sanctum-button">
-                  Begin Quest
-                </button>
-              </div>
+              <button
+                onClick={startQuest}
+                className="mt-3 rounded-md border border-amber-600 bg-[#2a0b0b] px-3 py-1.5 text-sm font-semibold text-amber-100 transition hover:border-amber-400 hover:bg-[#3a0f0f]"
+              >
+                Begin Quest
+              </button>
             </div>
           )}
         </section>
